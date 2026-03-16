@@ -12,7 +12,10 @@ fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 source "$ROOT/scripts/diagnostics_env.sh"
+source "$ROOT/scripts/target_common.sh"
 fuzzpipe_setup_diagnostics_env
+
+fuzzpipe_assert_target_exists "$ROOT" "$TARGET"
 
 if [ ! -f "$CRASH_PATH" ]; then
   echo "Crash file not found: $CRASH_PATH"
@@ -26,15 +29,7 @@ mkdir -p "$MIN_DIR"
 LOG_FILE="$MIN_DIR/minimize.log"
 META_FILE="$MIN_DIR/minimize_meta.json"
 
-FUZZER=""
-if [ "$TARGET" = "cjson" ]; then
-  FUZZER="$ROOT/targets/cjson/out/cjson_fuzzer"
-elif [ "$TARGET" = "cjson_old" ]; then
-  FUZZER="$ROOT/targets/cjson_old/out/cjson_old_fuzzer"
-else
-  echo "Unknown target: $TARGET"
-  exit 1
-fi
+FUZZER="$(fuzzpipe_target_fuzzer_path "$ROOT" "$TARGET")"
 
 if [ ! -x "$FUZZER" ]; then
   echo "Fuzzer binary not found or not executable: $FUZZER"
