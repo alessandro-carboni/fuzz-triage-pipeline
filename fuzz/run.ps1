@@ -96,6 +96,8 @@ function Show-Usage {
     Write-Host "Usage:"
     Write-Host "  .\fuzz\run.ps1 build"
     Write-Host "  .\fuzz\run.ps1 shell"
+    Write-Host "  .\fuzz\run.ps1 help"
+    Write-Host "  .\fuzz\run.ps1 summary"
     Write-Host "  .\fuzz\run.ps1 fuzz [target] [seconds] [-targetRef <ref>]"
     Write-Host "      example: .\fuzz\run.ps1 fuzz cjson 30 -targetRef v1.7.17"
     Write-Host "  .\fuzz\run.ps1 demo-crash [target] [seconds] [-targetRef <ref>]"
@@ -304,7 +306,7 @@ function Invoke-InContainer {
 }
 
 function Get-BootstrapCommand {
-    return "chmod +x scripts/diagnostics_env.sh fuzz/fuzz.sh triage/repro.sh triage/minimize.sh targets/cjson/fetch.sh targets/cjson/build.sh"
+    return "chmod +x scripts/diagnostics_env.sh fuzz/fuzz.sh triage/repro.sh triage/minimize.sh targets/cjson/fetch.sh targets/cjson/build.sh targets/cjson_old/fetch.sh targets/cjson_old/build.sh"
 }
 
 function Get-RelativeCrashWorkspacePath {
@@ -469,80 +471,159 @@ function Remove-RunArtifacts {
     Remove-DirectoryIfExists $related.RunDir
 }
 
+function Get-RunCrashCount {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RunDir
+    )
+
+    $crashDir = Join-Path $RunDir "crashes"
+    if (-not (Test-Path $crashDir)) {
+        return 0
+    }
+
+    return (Get-ChildItem $crashDir -File | Measure-Object).Count
+}
+
+function Get-RelatedLatestReproMeta {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$TargetName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$RunId
+    )
+
+    $reproRoot = Get-TargetRootPath -BaseRelativePath "artifacts\repros" -TargetName $TargetName
+    if (-not (Test-Path $reproRoot)) {
+        return $null
+    }
+
+    $items = @()
+
+    foreach ($dir in Get-ChildItem $reproRoot -Directory) {
+        $metaPath = Join-Path $dir.FullName "repro_meta.json"
+        $meta = Read-JsonFile $metaPath
+        if ($null -eq $meta) { continue }
+
+        if ([string]$meta.run_id -eq $RunId) {
+            $items += [PSCustomObject]@{
+                Dir  = $dir
+                Meta = $meta
+            }
+        }
+    }
+
+    if ($items.Count -eq 0) {
+        return $null
+    }
+
+    return ($items | Sort-Object { $_.Dir.Name } -Descending | Select-Object -First 1)
+}
+
+function Get-RelatedLatestMinimizeMeta {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$TargetName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$RunId
+    )
+
+    $minRoot = Get-TargetRootPath -BaseRelativePath "artifacts\minimized" -TargetName $TargetName
+    if (-not (Test-Path $minRoot)) {
+        return $null
+    }
+
+    $items = @()
+
+    foreach ($dir in Get-ChildItem $minRoot -Directory) {
+        $metaPath = Join-Path $dir.FullName "minimize_meta.json"
+        $meta = Read-JsonFile $metaPath
+        if ($null -eq $meta) { continue }
+
+        if ([string]$meta.run_id -eq $RunId) {
+            $items += [PSCustomObject]@{
+                Dir  = $dir
+                Meta = $meta
+            }
+        }
+    }
+
+    if ($items.Count -eq 0) {
+        return $null
+    }
+
+    return ($items | Sort-Object { $_.Dir.Name } -Descending | Select-Object -First 1)
+}
+
 function Show-Status {
     param(
         [Parameter(Mandatory = $true)]
         [string]$TargetName
     )
 
-    try {
-        $latestRun = Get-LatestRunDir $TargetName
-    }
-    catch {
-        Write-Host "[+] No latest run available for target: $TargetName"
-        return
-    }
-
-    $runId = $latestRun.Name
-    Write-Host "Target: $TargetName"
-    Write-Host "Latest run id: $runId"
-
+    $latestRun = Get-LatestRunDir $TargetName
     $metaPath = Join-Path $latestRun.FullName "meta.json"
     $meta = Read-JsonFile $metaPath
-    if ($null -ne $meta) {
-        Write-Host "Mode: $($meta.mode)"
-        Write-Host "Target ref: $($meta.target_ref)"
-        Write-Host "Target version: $($meta.target_version)"
+
+    $runId = $latestRun.Name
+    $crashCount = Get-RunCrashCount -RunDir $latestRun.FullName
+
+    $reportDir = Join-Path (Get-TargetRootPath -BaseRelativePath "artifacts\reports" -TargetName $TargetName) $runId
+    $reportJsonPath = Join-Path $reportDir "report.json"
+    $reportPresent = Test-Path $reportJsonPath
+
+    $reproInfo = Get-RelatedLatestReproMeta -TargetName $TargetName -RunId $runId
+    $minInfo = Get-RelatedLatestMinimizeMeta -TargetName $TargetName -RunId $runId
+
+    $reproPresent = $null -ne $reproInfo
+    $minPresent = $null -ne $minInfo
+
+    $mode = if ($meta) { [string]$meta.mode } else { "unknown" }
+    $targetRefValue = if ($meta) { [string]$meta.target_ref } else { "unknown" }
+    $targetVersion = if ($meta) { [string]$meta.target_version } else { "unknown" }
+
+    $lastReproStatus = if ($reproPresent) { [string]$reproInfo.Meta.repro_status } else { "absent" }
+    $lastReproExit = if ($reproPresent) { [string]$reproInfo.Meta.exit_code } else { "-" }
+
+    $lastMinStatus = if ($minPresent) { [string]$minInfo.Meta.minimize_status } else { "absent" }
+    $lastMinExit = if ($minPresent) { [string]$minInfo.Meta.exit_code } else { "-" }
+
+    Write-Host ""
+    Write-Host "========== FUZZPIPE STATUS =========="
+    Write-Host "Target           : $TargetName"
+    Write-Host "Latest run id    : $runId"
+    Write-Host "Mode             : $mode"
+    Write-Host "Target ref       : $targetRefValue"
+    Write-Host "Target version   : $targetVersion"
+    Write-Host "Crashes          : $crashCount"
+    Write-Host "Report           : $(if ($reportPresent) { 'present' } else { 'absent' })"
+    Write-Host "Repro            : $(if ($reproPresent) { 'present' } else { 'absent' })"
+    Write-Host "Repro status     : $lastReproStatus"
+    Write-Host "Repro exit code  : $lastReproExit"
+    Write-Host "Minimize         : $(if ($minPresent) { 'present' } else { 'absent' })"
+    Write-Host "Minimize status  : $lastMinStatus"
+    Write-Host "Minimize exit    : $lastMinExit"
+    Write-Host "Run path         : $($latestRun.FullName)"
+
+    if ($reportPresent) {
+        Write-Host "Report path      : $reportJsonPath"
     }
 
-    $crashDir = Join-Path $latestRun.FullName "crashes"
-    if (Test-Path $crashDir) {
-        $crashCount = @(Get-ChildItem $crashDir -File).Count
-        Write-Host "Crashes: $crashCount"
-    }
-    else {
-        Write-Host "Crashes: 0"
+    if ($reproPresent) {
+        Write-Host "Repro path       : $($reproInfo.Dir.FullName)"
     }
 
-    $reportPath = Join-Path (Join-Path (Get-TargetRootPath -BaseRelativePath "artifacts\reports" -TargetName $TargetName) $runId) "report.json"
-    $report = Read-JsonFile $reportPath
-    if ($null -ne $report) {
-        Write-Host "Report: present"
-        Write-Host "Unique signatures: $($report.counts.unique_signatures)"
-        Write-Host "Unique crash types: $($report.counts.unique_crash_types)"
-    }
-    else {
-        Write-Host "Report: absent"
+    if ($minPresent) {
+        Write-Host "Minimize path    : $($minInfo.Dir.FullName)"
     }
 
-    try {
-        $latestRepro = Get-LatestReproDir $TargetName
-        $reproMeta = Read-JsonFile (Join-Path $latestRepro.FullName "repro_meta.json")
-        if ($null -ne $reproMeta) {
-            Write-Host "Latest repro status: $($reproMeta.repro_status)"
-        }
-    }
-    catch {}
-
-    try {
-        $latestMin = Get-LatestMinimizeDir $TargetName
-        $minMeta = Read-JsonFile (Join-Path $latestMin.FullName "minimize_meta.json")
-        if ($null -ne $minMeta) {
-            Write-Host "Latest minimize status: $($minMeta.minimize_status)"
-        }
-    }
-    catch {}
+    Write-Host "====================================="
+    Write-Host ""
 }
 
-if ($cmd -eq "help") {
-    Show-Usage
-    exit 0
-}
-elseif ($cmd -eq "summary") {
-    Show-CommandSummary
-    exit 0
-}
-elseif ($cmd -eq "build") {
+if ($cmd -eq "build") {
     docker build -t $image -f docker/Dockerfile .
 }
 elseif ($cmd -eq "shell") {
@@ -767,6 +848,18 @@ elseif ($cmd -eq "status") {
 
     Show-Status -TargetName $target
 }
+
+elseif ($cmd -eq "summary") {
+    Show-CommandSummary
+    exit 0
+}
+
+elseif ($cmd -eq "help") {
+    Show-Usage
+    exit 0
+}
+
+
 elseif ($cmd -eq "delete") {
     if ($All) {
         Remove-DirectoryIfExists (Get-TargetRootPath -BaseRelativePath "artifacts\runs" -TargetName $target)

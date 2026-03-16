@@ -29,6 +29,8 @@ META_FILE="$REPRO_DIR/repro_meta.json"
 FUZZER=""
 if [ "$TARGET" = "cjson" ]; then
   FUZZER="$ROOT/targets/cjson/out/cjson_fuzzer"
+elif [ "$TARGET" = "cjson_old" ]; then
+  FUZZER="$ROOT/targets/cjson_old/out/cjson_old_fuzzer"
 else
   echo "Unknown target: $TARGET"
   exit 1

@@ -846,6 +846,8 @@ def main() -> None:
 
     if target == "cjson":
         fuzzer_path = Path("/workspace/targets/cjson/out/cjson_fuzzer")
+    elif target == "cjson_old":
+        fuzzer_path = Path("/workspace/targets/cjson_old/out/cjson_old_fuzzer")
     else:
         raise SystemExit(f"Unknown target: {target}")
 

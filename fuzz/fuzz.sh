@@ -52,24 +52,31 @@ write_meta() {
 EOF
 }
 
-if [ "$TARGET" = "cjson" ]; then
+if [ "$TARGET" = "cjson" ] || [ "$TARGET" = "cjson_old" ]; then
   echo "[+] Run dir: $RUN_DIR" | tee -a "$LOG_FILE"
 
-  echo "[+] Fetching target sources (cJSON)" | tee -a "$LOG_FILE"
-  bash "$ROOT/targets/cjson/fetch.sh" 2>&1 | tee -a "$LOG_FILE"
+  echo "[+] Fetching target sources ($TARGET)" | tee -a "$LOG_FILE"
+  bash "$ROOT/targets/$TARGET/fetch.sh" 2>&1 | tee -a "$LOG_FILE"
 
-  CJSON_REPO="$ROOT/targets/cjson/src/cjson"
+  TARGET_REPO="$ROOT/targets/$TARGET/src/cjson"
   TARGET_VERSION="unknown"
-  if [ -d "$CJSON_REPO/.git" ]; then
-    TARGET_VERSION="$(git -C "$CJSON_REPO" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+  if [ -d "$TARGET_REPO/.git" ]; then
+    TARGET_VERSION="$(git -C "$TARGET_REPO" rev-parse --short HEAD 2>/dev/null || echo unknown)"
   fi
 
   echo "[+] Building target fuzzer" | tee -a "$LOG_FILE"
-  bash "$ROOT/targets/cjson/build.sh" 2>&1 | tee -a "$LOG_FILE"
+  bash "$ROOT/targets/$TARGET/build.sh" 2>&1 | tee -a "$LOG_FILE"
 
   write_meta "$TARGET_VERSION"
 
-  FUZZER="$ROOT/targets/cjson/out/cjson_fuzzer"
+  if [ "$TARGET" = "cjson" ]; then
+    FUZZER="$ROOT/targets/cjson/out/cjson_fuzzer"
+  elif [ "$TARGET" = "cjson_old" ]; then
+    FUZZER="$ROOT/targets/cjson_old/out/cjson_old_fuzzer"
+  else
+    echo "[-] Unsupported target binary mapping: $TARGET" | tee -a "$LOG_FILE"
+    exit 1
+  fi
 
   if [ ! -x "$FUZZER" ]; then
     echo "[-] Fuzzer binary not found or not executable: $FUZZER" | tee -a "$LOG_FILE"
@@ -111,7 +118,7 @@ if [ "$TARGET" = "cjson" ]; then
   )
 
   # Optional dictionary
-  DICT_FILE="$ROOT/targets/cjson/dict/json.dict"
+  DICT_FILE="$ROOT/targets/$TARGET/dict/json.dict"
   if [ -f "$DICT_FILE" ]; then
     echo "[+] Using dictionary: $DICT_FILE" | tee -a "$LOG_FILE"
     FUZZ_ARGS+=("-dict=$DICT_FILE")

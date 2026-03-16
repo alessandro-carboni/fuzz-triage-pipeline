@@ -194,7 +194,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     return 0;
   }
 
-  cJSON* root = cJSON_ParseWithLength(buf, size);
+  cJSON* root = cJSON_Parse(buf);
   if (root) {
     exercise_node(root);
     exercise_roundtrip(root);
