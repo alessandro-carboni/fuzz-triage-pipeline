@@ -241,7 +241,14 @@ EOF
     "${san_flags[@]}" \
     -fsanitize=fuzzer \
     "$harness_obj" \
-    "$out/"*.o \
+    "$api_obj" \
+    "$reader_obj" \
+    "$scanner_obj" \
+    "$parser_obj" \
+    "$loader_obj" \
+    "$writer_obj" \
+    "$emitter_obj" \
+    "$dumper_obj" \
     -o "$fuzzer_bin"
 
   echo "[+] Built: $fuzzer_bin"
