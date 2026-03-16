@@ -16,7 +16,6 @@ if [ ! -f "$CRASH_PATH" ]; then
   exit 1
 fi
 
-# Create a repro run folder near the crash run, but always under artifacts/repros/
 RUN_ID="$(date +%Y-%m-%d_%H%M%S)"
 REPRO_DIR="$ROOT/artifacts/repros/$TARGET/$RUN_ID"
 mkdir -p "$REPRO_DIR"
@@ -32,13 +31,12 @@ else
   exit 1
 fi
 
-if [ ! -f "$FUZZER" ]; then
-  echo "Fuzzer binary not found: $FUZZER"
-  echo "Hint: run fuzz build first (e.g. ./fuzz/fuzz.sh $TARGET) to produce the binary."
+if [ ! -x "$FUZZER" ]; then
+  echo "Fuzzer binary not found or not executable: $FUZZER"
+  echo "Hint: run fuzz build first to produce the binary."
   exit 1
 fi
 
-# Save metadata
 cat > "$META_FILE" <<EOF
 {
   "target": "$TARGET",
@@ -52,8 +50,18 @@ EOF
 echo "[+] Reproducing crash..." | tee -a "$LOG_FILE"
 echo "[+] Fuzzer: $FUZZER" | tee -a "$LOG_FILE"
 echo "[+] Crash: $CRASH_PATH" | tee -a "$LOG_FILE"
+echo "[+] Repro dir: $REPRO_DIR" | tee -a "$LOG_FILE"
 
-# Run fuzzer on the crashing input and capture sanitizer output
+export ASAN_SYMBOLIZER_PATH="${ASAN_SYMBOLIZER_PATH:-$(command -v llvm-symbolizer || true)}"
+export UBSAN_OPTIONS="${UBSAN_OPTIONS:-print_stacktrace=1:halt_on_error=1}"
+export ASAN_OPTIONS="${ASAN_OPTIONS:-symbolize=1:detect_leaks=0:abort_on_error=1}"
+export FUZZPIPE_DEMO_CRASH="${FUZZPIPE_DEMO_CRASH:-0}"
+
+echo "[+] ASAN_SYMBOLIZER_PATH=${ASAN_SYMBOLIZER_PATH:-unset}" | tee -a "$LOG_FILE"
+echo "[+] UBSAN_OPTIONS=$UBSAN_OPTIONS" | tee -a "$LOG_FILE"
+echo "[+] ASAN_OPTIONS=$ASAN_OPTIONS" | tee -a "$LOG_FILE"
+echo "[+] FUZZPIPE_DEMO_CRASH=$FUZZPIPE_DEMO_CRASH" | tee -a "$LOG_FILE"
+
 "$FUZZER" "$CRASH_PATH" 2>&1 | tee -a "$LOG_FILE" || true
 
 echo "[+] Saved repro log to: $LOG_FILE"

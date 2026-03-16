@@ -1,0 +1,30 @@
+[+] Minimizing crash...
+[+] Fuzzer: /workspace/targets/cjson/out/cjson_fuzzer
+[+] Input crash: /workspace/artifacts/runs/cjson/2026-03-15_210636/crashes/crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd
+[+] Output file: /workspace/artifacts/minimized/cjson/2026-03-15_211219/minimized-crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd
+[+] Original size: 7
+[+] MINIMIZE_MAX_TOTAL_TIME=20
+[+] ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
+[+] UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1
+[+] ASAN_OPTIONS=symbolize=1:detect_leaks=0:abort_on_error=1
+[+] FUZZPIPE_DEMO_CRASH=1
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 2640400037
+INFO: Loaded 1 modules   (3152 inline 8-bit counters): 3152 [0x562ddb34c448, 0x562ddb34d098), 
+INFO: Loaded 1 PC tables (3152 PCs): 3152 [0x562ddb34d098,0x562ddb359598), 
+CRASH_MIN: minimizing crash input: '/workspace/artifacts/runs/cjson/2026-03-15_210636/crashes/crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd' (7 bytes)
+CRASH_MIN: executing: /workspace/targets/cjson/out/cjson_fuzzer -max_total_time=20 /workspace/artifacts/runs/cjson/2026-03-15_210636/crashes/crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd 2>&1
+CRASH_MIN: '/workspace/artifacts/runs/cjson/2026-03-15_210636/crashes/crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd' (7 bytes) caused a crash. Will try to minimize it further
+CRASH_MIN: executing: /workspace/targets/cjson/out/cjson_fuzzer -max_total_time=20 /workspace/artifacts/runs/cjson/2026-03-15_210636/crashes/crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd -minimize_crash_internal_step=1 -exact_artifact_path=/workspace/artifacts/minimized/cjson/2026-03-15_211219/minimized-crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd 2>&1
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3027399667
+INFO: Loaded 1 modules   (3152 inline 8-bit counters): 3152 [0x555f60cf0448, 0x555f60cf1098), 
+INFO: Loaded 1 PC tables (3152 PCs): 3152 [0x555f60cf1098,0x555f60cfd598), 
+INFO: Starting MinimizeCrashInputInternalStep: 7
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 7 bytes
+#1048576	pulse  exec/s: 524288 rss: 243Mb
+#2097152	pulse  exec/s: 419430 rss: 451Mb
+#4194304	pulse  exec/s: 419430 rss: 573Mb
+#8388608	pulse  exec/s: 466033 rss: 573Mb
+INFO: Done MinimizeCrashInputInternalStep, no crashes found
+CRASH_MIN: failed to minimize beyond /workspace/artifacts/minimized/cjson/2026-03-15_211219/minimized-crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd (7 bytes), exiting

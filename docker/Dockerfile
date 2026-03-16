@@ -4,6 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt update && apt install -y \
     clang \
+    llvm \
     lld \
     build-essential \
     cmake \
@@ -13,7 +14,6 @@ RUN apt update && apt install -y \
     gdb \
     && rm -rf /var/lib/apt/lists/*
 
-# libFuzzer is included in clang
 ENV CC=clang
 ENV CXX=clang++
 

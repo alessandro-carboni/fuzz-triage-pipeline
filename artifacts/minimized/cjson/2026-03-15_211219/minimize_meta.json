@@ -1,0 +1,12 @@
+{
+  "target": "cjson",
+  "minimize_id": "2026-03-15_211219",
+  "timestamp": "2026-03-15T21:12:41+00:00",
+  "crash_path": "/workspace/artifacts/runs/cjson/2026-03-15_210636/crashes/crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd",
+  "minimized_path": "/workspace/artifacts/minimized/cjson/2026-03-15_211219/minimized-crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd",
+  "fuzzer_path": "/workspace/targets/cjson/out/cjson_fuzzer",
+  "original_size": 7,
+  "minimized_size": 7,
+  "reduction_percent": 0.0,
+  "max_total_time": 20
+}

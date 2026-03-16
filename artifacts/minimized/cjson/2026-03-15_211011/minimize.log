@@ -1,0 +1,18 @@
+[+] Minimizing crash...
+[+] Fuzzer: /workspace/targets/cjson/out/cjson_fuzzer
+[+] Input crash: /workspace/artifacts/runs/cjson/2026-03-15_210636/crashes/crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd
+[+] Output file: /workspace/artifacts/minimized/cjson/2026-03-15_211011/minimized-crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd
+[+] Original size: 7
+[+] MINIMIZE_MAX_TOTAL_TIME=20
+[+] ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
+[+] UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1
+[+] ASAN_OPTIONS=symbolize=1:detect_leaks=0:abort_on_error=1
+[+] FUZZPIPE_DEMO_CRASH=0
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3291994625
+INFO: Loaded 1 modules   (3152 inline 8-bit counters): 3152 [0x55f09890e448, 0x55f09890f098), 
+INFO: Loaded 1 PC tables (3152 PCs): 3152 [0x55f09890f098,0x55f09891b598), 
+CRASH_MIN: minimizing crash input: '/workspace/artifacts/runs/cjson/2026-03-15_210636/crashes/crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd' (7 bytes)
+CRASH_MIN: executing: /workspace/targets/cjson/out/cjson_fuzzer -max_total_time=20 /workspace/artifacts/runs/cjson/2026-03-15_210636/crashes/crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd 2>&1
+ERROR: the input /workspace/artifacts/runs/cjson/2026-03-15_210636/crashes/crash-b6f89f8658e51c2bbe52e1aee4ca6517d08c74bd did not crash
+[-] Minimized output was not produced.
