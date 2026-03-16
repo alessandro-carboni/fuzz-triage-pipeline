@@ -14,16 +14,16 @@
 [+] FUZZPIPE_DEMO_CRASH=0
 INFO: Running with entropic power schedule (0xFF, 100).
 INFO: Seed: 3647516445
-INFO: Loaded 1 modules   (2773 inline 8-bit counters): 2773 [0x55d21554f6e8, 0x55d2155501bd), 
-INFO: Loaded 1 PC tables (2773 PCs): 2773 [0x55d2155501c0,0x55d21555af10), 
+INFO: Loaded 1 modules   (2773 inline 8-bit counters): 2773 [0x55d21554f6e8, 0x55d2155501bd),
+INFO: Loaded 1 PC tables (2773 PCs): 2773 [0x55d2155501c0,0x55d21555af10),
 CRASH_MIN: minimizing crash input: '/workspace/artifacts/runs/cjson_old/2026-03-16_061452/crashes/crash-8c2c00c78afe348ea451a0da05a3b820238c5a53' (2 bytes)
 CRASH_MIN: executing: /workspace/targets/cjson_old/out/cjson_old_fuzzer -max_total_time=20 /workspace/artifacts/runs/cjson_old/2026-03-16_061452/crashes/crash-8c2c00c78afe348ea451a0da05a3b820238c5a53 2>&1
 CRASH_MIN: '/workspace/artifacts/runs/cjson_old/2026-03-16_061452/crashes/crash-8c2c00c78afe348ea451a0da05a3b820238c5a53' (2 bytes) caused a crash. Will try to minimize it further
 CRASH_MIN: executing: /workspace/targets/cjson_old/out/cjson_old_fuzzer -max_total_time=20 /workspace/artifacts/runs/cjson_old/2026-03-16_061452/crashes/crash-8c2c00c78afe348ea451a0da05a3b820238c5a53 -minimize_crash_internal_step=1 -exact_artifact_path=/workspace/artifacts/minimized/cjson_old/2026-03-16_061500/minimized-crash-8c2c00c78afe348ea451a0da05a3b820238c5a53 2>&1
 INFO: Running with entropic power schedule (0xFF, 100).
 INFO: Seed: 144875701
-INFO: Loaded 1 modules   (2773 inline 8-bit counters): 2773 [0x55b0c680b6e8, 0x55b0c680c1bd), 
-INFO: Loaded 1 PC tables (2773 PCs): 2773 [0x55b0c680c1c0,0x55b0c6816f10), 
+INFO: Loaded 1 modules   (2773 inline 8-bit counters): 2773 [0x55b0c680b6e8, 0x55b0c680c1bd),
+INFO: Loaded 1 PC tables (2773 PCs): 2773 [0x55b0c680c1c0,0x55b0c6816f10),
 INFO: Starting MinimizeCrashInputInternalStep: 2
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 2 bytes
 =================================================================
@@ -71,7 +71,7 @@ Shadow bytes around the buggy address:
   0x502000000800: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
 Shadow byte legend (one shadow byte represents 8 application bytes):
   Addressable:           00
-  Partially addressable: 01 02 03 04 05 06 07 
+  Partially addressable: 01 02 03 04 05 06 07
   Heap left redzone:       fa
   Freed heap region:       fd
   Stack left redzone:      f1
@@ -102,8 +102,8 @@ CRASH_MIN: '/workspace/artifacts/minimized/cjson_old/2026-03-16_061500/minimized
 CRASH_MIN: executing: /workspace/targets/cjson_old/out/cjson_old_fuzzer -max_total_time=20 /workspace/artifacts/minimized/cjson_old/2026-03-16_061500/minimized-crash-8c2c00c78afe348ea451a0da05a3b820238c5a53 -minimize_crash_internal_step=1 -exact_artifact_path=/workspace/artifacts/minimized/cjson_old/2026-03-16_061500/minimized-crash-8c2c00c78afe348ea451a0da05a3b820238c5a53 2>&1
 INFO: Running with entropic power schedule (0xFF, 100).
 INFO: Seed: 1676576631
-INFO: Loaded 1 modules   (2773 inline 8-bit counters): 2773 [0x5641ef60b6e8, 0x5641ef60c1bd), 
-INFO: Loaded 1 PC tables (2773 PCs): 2773 [0x5641ef60c1c0,0x5641ef616f10), 
+INFO: Loaded 1 modules   (2773 inline 8-bit counters): 2773 [0x5641ef60b6e8, 0x5641ef60c1bd),
+INFO: Loaded 1 PC tables (2773 PCs): 2773 [0x5641ef60c1c0,0x5641ef616f10),
 INFO: Starting MinimizeCrashInputInternalStep: 1
 INFO: The input is small enough, exiting
 CRASH_MIN: failed to minimize beyond /workspace/artifacts/minimized/cjson_old/2026-03-16_061500/minimized-crash-8c2c00c78afe348ea451a0da05a3b820238c5a53 (1 bytes), exiting
