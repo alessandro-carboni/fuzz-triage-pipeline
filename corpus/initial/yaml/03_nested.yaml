@@ -1,0 +1,6 @@
+user:
+  id: 1
+  name: alice
+  roles:
+    - admin
+    - user

@@ -1,0 +1,11 @@
+default: &default
+  name: base
+  enabled: true
+
+item1:
+  <<: *default
+  id: 1
+
+item2:
+  <<: *default
+  id: 2

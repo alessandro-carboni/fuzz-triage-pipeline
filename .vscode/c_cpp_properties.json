@@ -3,7 +3,9 @@
     {
       "name": "windows-gcc-x86",
       "includePath": [
-        "${workspaceFolder}/**"
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/targets/yaml/src/libyaml/include",
+        "${workspaceFolder}/targets/yaml/src/libyaml/src"
       ],
       "compilerPath": "C:/MinGW/bin/gcc.exe",
       "cStandard": "${default}",
