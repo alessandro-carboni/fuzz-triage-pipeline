@@ -31,7 +31,7 @@ STACK_FRAME_FALLBACK_RE = re.compile(
 )
 
 ASAN_SUMMARY_RE = re.compile(
-    r"SUMMARY:\s+AddressSanitizer:\s+(?P<crash_type>[A-Za-z0-9_-]+)\s+(?P<file>/[^:\s]+):(?P<line>\d+)\s+in\s+(?P<func>.+)"
+    r"SUMMARY:\s+AddressSanitizer:\s+(?P<crash_type>[A-Za-z0-9_-]+)\s+(?P<file>/[^:\s]+):(?P<line>\d+)(?::(?P<col>\d+))?\s+in\s+(?P<func>.+)"
 )
 
 LIBFUZZER_SUMMARY_RE = re.compile(r"SUMMARY:\s+libFuzzer:\s+(?P<crash_type>.+)")
@@ -373,14 +373,22 @@ def score_frame(frame: FrameInfo, target: str) -> FrameInfo:
     if f"/workspace/targets/{target}/" in frame.file_path:
         score += 30
         reason.append("+30 current target source")
+        
+    if path_l.endswith(".c") or path_l.endswith(".cc") or path_l.endswith(".cpp"):
+        score += 10
+        reason.append("+10 source file")
+
+    if "/src/" in path_l:
+        score += 15
+        reason.append("+15 src path")
 
     if path_l.endswith("harness.cpp"):
-        score += 40
-        reason.append("+40 harness frame")
+        score -= 30
+        reason.append("-30 harness frame")
 
     if "llvmfuzzertestoneinput" in func_l:
-        score += 20
-        reason.append("+20 fuzz target entrypoint")
+        score -= 20
+        reason.append("-20 fuzz target entrypoint")
 
     if func_l.startswith("trigger_demo_"):
         score += 120
@@ -422,7 +430,8 @@ def extract_root_cause(
             func = m.group("func").strip()
             file_path = m.group("file").strip()
             line = int(m.group("line"))
-            return func, file_path, line, 999, ["asan summary"]
+            reason = ["asan summary", "preferred over fallback stack scoring"]
+            return func, file_path, line, 999, reason
 
     scored_frames: list[FrameInfo] = []
     for raw_frame in stack:
