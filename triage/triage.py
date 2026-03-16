@@ -373,7 +373,7 @@ def score_frame(frame: FrameInfo, target: str) -> FrameInfo:
     if f"/workspace/targets/{target}/" in frame.file_path:
         score += 30
         reason.append("+30 current target source")
-        
+
     if path_l.endswith(".c") or path_l.endswith(".cc") or path_l.endswith(".cpp"):
         score += 10
         reason.append("+10 source file")
