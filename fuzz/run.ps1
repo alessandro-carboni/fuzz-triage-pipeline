@@ -25,7 +25,10 @@ param(
         "delete",
         "help",
         "summary",
-        "status"
+        "status",
+        "coverage",
+        "coverage-summary",
+        "coverage-replay-log"
     )]
     [string]$cmd,
 
@@ -113,6 +116,9 @@ function Show-CommandSummary {
     Write-Host "  delete          Delete latest run / specific run / all artifacts"
     Write-Host "  help            Show usage"
     Write-Host "  summary         Show short command summary"
+    Write-Host "  coverage        List coverage directories"
+    Write-Host "  coverage-summary Show latest coverage summary"
+    Write-Host "  coverage-replay-log Show latest coverage replay log"
     Write-Host ""
 }
 
@@ -155,6 +161,9 @@ function Show-Usage {
     Write-Host "  .\fuzz\run.ps1 minimize-meta <target> -Last"
     Write-Host "  .\fuzz\run.ps1 get-id <target> -Last"
     Write-Host "  .\fuzz\run.ps1 status <target> -Last"
+    Write-Host "  .\fuzz\run.ps1 coverage <target> -Last"
+    Write-Host "  .\fuzz\run.ps1 coverage-summary <target> -Last"
+    Write-Host "  .\fuzz\run.ps1 coverage-replay-log <target> -Last"
     Write-Host ""
     Write-Host "Artifact listings:"
     Write-Host "  .\fuzz\run.ps1 runs <target>"
@@ -165,6 +174,8 @@ function Show-Usage {
     Write-Host "  .\fuzz\run.ps1 minimized <target> -Last"
     Write-Host "  .\fuzz\run.ps1 reports <target>"
     Write-Host "  .\fuzz\run.ps1 reports <target> -Last"
+    Write-Host "  .\fuzz\run.ps1 coverage <target>"
+    Write-Host "  .\fuzz\run.ps1 coverage <target> -Last"
     Write-Host ""
     Write-Host "Deletion:"
     Write-Host "  .\fuzz\run.ps1 delete <target> -Last"
@@ -309,6 +320,21 @@ function Get-LatestReportDir {
         -RootPath $root `
         -EmptyRootMessage "No reports directory found for target: $TargetName" `
         -EmptyDirMessage "No report directories found for target: $TargetName"
+}
+
+function Get-LatestCoverageDir {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$TargetName
+    )
+
+    Assert-TargetSupported -TargetName $TargetName
+
+    $root = Get-TargetRootPath -BaseRelativePath "artifacts\coverage" -TargetName $TargetName
+    return Get-LatestDirectoryFromRoot `
+        -RootPath $root `
+        -EmptyRootMessage "No coverage directory found for target: $TargetName" `
+        -EmptyDirMessage "No coverage runs found for target: $TargetName"
 }
 
 function Get-CommonDockerArgs {
@@ -667,6 +693,7 @@ function Show-Status {
     Write-Host "Minimize exit    : $lastMinExit"
     Write-Host "Run path         : $($latestRun.FullName)"
 
+
     if ($reportPresent) {
         Write-Host "Report path      : $reportJsonPath"
     }
@@ -833,6 +860,24 @@ elseif ($cmd -eq "report-json") {
 
     Get-Content $reportPath
 }
+elseif ($cmd -eq "coverage-replay-log") {
+    $target = Resolve-RequiredTarget $target
+
+    if (-not $Last) {
+        Show-Usage
+        exit 1
+    }
+
+    $latestCoverage = Get-LatestCoverageDir $target
+    $logPath = Join-Path $latestCoverage.FullName "coverage-replay.log"
+
+    if (-not (Test-Path $logPath)) {
+        Write-Host "[+] Coverage replay log not found: $logPath"
+        exit 0
+    }
+
+    Get-Content $logPath
+}
 elseif ($cmd -eq "crashes") {
     $target = Resolve-RequiredTarget $target
 
@@ -919,6 +964,30 @@ elseif ($cmd -eq "reports") {
     $root = Get-TargetRootPath -BaseRelativePath "artifacts\reports" -TargetName $target
     Show-LatestOrList -RootPath $root -UseLast:$Last
 }
+elseif ($cmd -eq "coverage-summary") {
+    $target = Resolve-RequiredTarget $target
+
+    if (-not $Last) {
+        Show-Usage
+        exit 1
+    }
+
+    $latestCoverage = Get-LatestCoverageDir $target
+    $summaryPath = Join-Path $latestCoverage.FullName "coverage-summary.txt"
+
+    if (-not (Test-Path $summaryPath)) {
+        Write-Host "[+] Coverage summary not found: $summaryPath"
+        exit 0
+    }
+
+    Get-Content $summaryPath
+}
+elseif ($cmd -eq "coverage") {
+    $target = Resolve-RequiredTarget $target
+
+    $root = Get-TargetRootPath -BaseRelativePath "artifacts\coverage" -TargetName $target
+    Show-LatestOrList -RootPath $root -UseLast:$Last
+}
 elseif ($cmd -eq "get-id") {
     $target = Resolve-RequiredTarget $target
 
@@ -962,6 +1031,7 @@ elseif ($cmd -eq "delete") {
         Remove-DirectoryIfExists (Get-TargetRootPath -BaseRelativePath "artifacts\reports" -TargetName $target)
         Remove-DirectoryIfExists (Get-TargetRootPath -BaseRelativePath "artifacts\repros" -TargetName $target)
         Remove-DirectoryIfExists (Get-TargetRootPath -BaseRelativePath "artifacts\minimized" -TargetName $target)
+        Remove-DirectoryIfExists (Get-TargetRootPath -BaseRelativePath "artifacts\coverage" -TargetName $target)
         exit 0
     }
 

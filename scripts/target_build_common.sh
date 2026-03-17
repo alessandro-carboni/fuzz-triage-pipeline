@@ -52,9 +52,6 @@ fuzzpipe_build_cjson_target() {
   local coverage_flags=()
   fuzzpipe_append_coverage_flags coverage_flags
 
-  local coverage_flags=()
-  fuzzpipe_append_coverage_flags coverage_flags
-
   echo "[+] Build root: $root"
   echo "[+] Source dir: $src"
   echo "[+] Output dir: $out"
@@ -196,6 +193,7 @@ EOF
   clang++ \
     "${common_flags[@]}" \
     "${san_flags[@]}" \
+    "${coverage_flags[@]}" \
     -fsanitize=fuzzer \
     "$harness_obj" \
     "$api_obj" \
@@ -243,6 +241,9 @@ fuzzpipe_build_sqlite_target() {
     -fsanitize=fuzzer-no-link
   )
 
+  local coverage_flags=()
+  fuzzpipe_append_coverage_flags coverage_flags
+
   local sqlite_defines=(
     -DSQLITE_THREADSAFE=0
     -DSQLITE_OMIT_LOAD_EXTENSION
@@ -282,6 +283,7 @@ fuzzpipe_build_sqlite_target() {
   clang++ \
     "${common_flags[@]}" \
     "${san_flags[@]}" \
+    "${coverage_flags[@]}" \
     -fsanitize=fuzzer \
     "$harness_obj" \
     "$sqlite_obj" \

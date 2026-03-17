@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  lint-and-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,13 +16,104 @@ jobs:
           python-version: "3.12"
 
       - run: python -m pip install -U pip
-
       - run: pip install ruff pytest
-
       - run: pip install -e ".[dev]" || true
 
       - run: ruff check .
-
       - run: ruff format --check .
-
       - run: pytest -q || true
+
+  fuzz-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t fuzzpipe -f docker/Dockerfile .
+
+      - name: Bootstrap executable scripts
+        run: |
+          chmod +x scripts/diagnostics_env.sh
+          chmod +x scripts/target_common.sh
+          chmod +x scripts/target_fetch_common.sh
+          chmod +x scripts/target_build_common.sh
+          chmod +x fuzz/fuzz.sh
+          chmod +x triage/repro.sh
+          chmod +x triage/minimize.sh
+          find targets -type f \( -name fetch.sh -o -name build.sh \) -exec chmod +x {} +
+
+      - name: Run smoke demo crash on cjson legacy ref
+        run: |
+          docker run --rm \
+            -e DOCKER_IMAGE_TAG=fuzzpipe:ci \
+            -e TARGET_REF=v1.5.0 \
+            -e MAX_TOTAL_TIME=5 \
+            -v "$PWD:/workspace" \
+            fuzzpipe \
+            bash -lc "./fuzz/fuzz.sh cjson demo-crash" || true
+
+      - name: Resolve latest run and crash
+        run: |
+          latest_run="$(ls -1 artifacts/runs/cjson | sort | tail -n1)"
+          if [ -z "$latest_run" ]; then
+            echo "No cjson run directory found"
+            exit 1
+          fi
+
+          latest_crash="$(find "artifacts/runs/cjson/$latest_run/crashes" -maxdepth 1 -type f | sort | tail -n1)"
+          if [ -z "$latest_crash" ]; then
+            echo "No crash file found for run $latest_run"
+            exit 1
+          fi
+
+          echo "LATEST_RUN=$latest_run" >> "$GITHUB_ENV"
+          echo "LATEST_CRASH=$latest_crash" >> "$GITHUB_ENV"
+
+      - name: Reproduce latest crash
+        run: |
+          docker run --rm \
+            -e DOCKER_IMAGE_TAG=fuzzpipe:ci \
+            -v "$PWD:/workspace" \
+            fuzzpipe \
+            bash -lc "./triage/repro.sh cjson /workspace/$LATEST_CRASH"
+
+      - name: Minimize latest crash
+        run: |
+          docker run --rm \
+            -e DOCKER_IMAGE_TAG=fuzzpipe:ci \
+            -v "$PWD:/workspace" \
+            fuzzpipe \
+            bash -lc "./triage/minimize.sh cjson /workspace/$LATEST_CRASH"
+
+      - name: Generate triage report
+        run: |
+          docker run --rm \
+            -e DOCKER_IMAGE_TAG=fuzzpipe:ci \
+            -v "$PWD:/workspace" \
+            fuzzpipe \
+            bash -lc "python3 triage/triage.py --target cjson --run /workspace/artifacts/runs/cjson/$LATEST_RUN --timeout 20"
+
+      - name: Upload crash artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cjson-smoke-crash-${{ env.LATEST_RUN }}
+          path: artifacts/runs/cjson/${{ env.LATEST_RUN }}/crashes
+          if-no-files-found: error
+
+      - name: Upload report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cjson-smoke-report-${{ env.LATEST_RUN }}
+          path: artifacts/reports/cjson/${{ env.LATEST_RUN }}
+          if-no-files-found: error
+
+      - name: Upload repro and minimize artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cjson-smoke-triage-support-${{ env.LATEST_RUN }}
+          path: |
+            artifacts/repros/cjson
+            artifacts/minimized/cjson
+          if-no-files-found: warn
