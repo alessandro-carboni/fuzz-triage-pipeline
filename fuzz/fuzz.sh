@@ -50,6 +50,8 @@ write_meta() {
   "target_source_kind": "$target_source_kind",
   "coverage_enabled": $(if [[ "${FUZZPIPE_ENABLE_COVERAGE:-0}" == "1" ]]; then echo true; else echo false; fi),
   "coverage_dir": "$COVERAGE_DIR",
+  "seed_corpus_dir": "$SEED_DIR",
+  "previous_corpus_dir": "${PREVIOUS_CORPUS_DIR:-}",
   "mode": "$MODE",
   "run_id": "$RUN_ID",
   "timestamp": "$(date -Iseconds)",
@@ -70,6 +72,26 @@ write_meta() {
   }
 }
 EOF
+}
+
+find_previous_run_corpus_dir() {
+  local runs_root="$ROOT/artifacts/runs/$TARGET"
+
+  if [ ! -d "$runs_root" ]; then
+    return 0
+  fi
+
+  local previous_run
+  previous_run="$(find "$runs_root" -mindepth 1 -maxdepth 1 -type d ! -name "$RUN_ID" | sort | tail -n 1 || true)"
+
+  if [ -z "$previous_run" ]; then
+    return 0
+  fi
+
+  local previous_corpus="$previous_run/corpus"
+  if [ -d "$previous_corpus" ]; then
+    echo "$previous_corpus"
+  fi
 }
 
 generate_coverage_artifacts() {
@@ -193,6 +215,13 @@ fi
 if [ -d "$SEED_DIR" ]; then
   echo "[+] Loading initial corpus from $SEED_DIR" | tee -a "$LOG_FILE"
   cp -n "$SEED_DIR"/* "$CORPUS_DIR"/ 2>/dev/null || true
+fi
+
+# Reuse corpus from previous run of the same target
+PREVIOUS_CORPUS_DIR="$(find_previous_run_corpus_dir || true)"
+if [ -n "${PREVIOUS_CORPUS_DIR:-}" ] && [ -d "$PREVIOUS_CORPUS_DIR" ]; then
+  echo "[+] Reusing corpus from previous run: $PREVIOUS_CORPUS_DIR" | tee -a "$LOG_FILE"
+  cp -n "$PREVIOUS_CORPUS_DIR"/* "$CORPUS_DIR"/ 2>/dev/null || true
 fi
 
 echo "[+] Running libFuzzer" | tee -a "$LOG_FILE"
