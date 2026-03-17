@@ -2,6 +2,14 @@
 
 A reproducible multi-target fuzzing and crash triage pipeline built to simulate a realistic vulnerability discovery workflow.
 
+<p align="center">
+  <img src="docs/fuzz-triage-pipe.gif" alt="Fuzz pipeline demo" width="900"/>
+</p>
+
+<p align="center">
+  <i>End-to-end fuzzing → crash → repro → minimization → triage workflow</i>
+</p>
+
 It supports automated target fetch/build, libFuzzer execution, crash capture, reproduction, minimization, triage, bucketing, root cause extraction, Markdown/JSON reporting, and optional per-run coverage artifacts.
 
 ---
