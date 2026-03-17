@@ -1,9 +1,104 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+fuzzpipe_list_supported_targets() {
+  echo "cjson cjson_old yaml sqlite"
+}
+
+fuzzpipe_assert_target_supported() {
+  local target="$1"
+
+  local supported
+  supported=" $(fuzzpipe_list_supported_targets) "
+
+  if [[ "$supported" != *" $target "* ]]; then
+    echo "Unsupported target: $target"
+    echo "Supported targets: $(fuzzpipe_list_supported_targets)"
+    exit 1
+  fi
+}
+
+fuzzpipe_target_family() {
+  local target="$1"
+
+  case "$target" in
+    cjson|cjson_old)
+      echo "cjson"
+      ;;
+    yaml)
+      echo "libyaml"
+      ;;
+    sqlite)
+      echo "sqlite"
+      ;;
+    *)
+      echo "unknown"
+      ;;
+  esac
+}
+
+fuzzpipe_target_repo_subdir() {
+  local target="$1"
+
+  case "$target" in
+    cjson|cjson_old)
+      echo "cjson"
+      ;;
+    yaml)
+      echo "libyaml"
+      ;;
+    sqlite)
+      echo "sqlite"
+      ;;
+    *)
+      echo ""
+      ;;
+  esac
+}
+
+fuzzpipe_target_source_kind() {
+  local target="$1"
+
+  case "$target" in
+    cjson|cjson_old|yaml)
+      echo "git"
+      ;;
+    sqlite)
+      echo "archive"
+      ;;
+    *)
+      echo "unknown"
+      ;;
+  esac
+}
+
+fuzzpipe_target_default_ref() {
+  local target="$1"
+
+  case "$target" in
+    cjson)
+      echo "master"
+      ;;
+    cjson_old)
+      echo "v1.5.0"
+      ;;
+    yaml)
+      echo "master"
+      ;;
+    sqlite)
+      echo "3.51.0"
+      ;;
+    *)
+      echo "master"
+      ;;
+  esac
+}
+
 fuzzpipe_target_dir() {
   local root="$1"
   local target="$2"
+
+  fuzzpipe_assert_target_supported "$target"
   echo "$root/targets/$target"
 }
 
@@ -47,6 +142,7 @@ fuzzpipe_target_dict_file() {
   local root="$1"
   local target="$2"
   local dict_dir
+
   dict_dir="$(fuzzpipe_target_dir "$root" "$target")/dict"
 
   if [ ! -d "$dict_dir" ]; then
@@ -85,25 +181,6 @@ fuzzpipe_target_git_repo_dir() {
   echo "$src_root"
 }
 
-fuzzpipe_target_repo_subdir() {
-  local target="$1"
-
-  case "$target" in
-    cjson|cjson_old)
-      echo "cjson"
-      ;;
-    yaml)
-      echo "libyaml"
-      ;;
-    sqlite)
-      echo "sqlite"
-      ;;
-    *)
-      echo ""
-      ;;
-  esac
-}
-
 fuzzpipe_assert_target_exists() {
   local root="$1"
   local target="$2"
@@ -111,6 +188,8 @@ fuzzpipe_assert_target_exists() {
   local target_dir
   local fetch_script
   local build_script
+
+  fuzzpipe_assert_target_supported "$target"
 
   target_dir="$(fuzzpipe_target_dir "$root" "$target")"
   fetch_script="$(fuzzpipe_target_fetch_script "$root" "$target")"
@@ -131,8 +210,4 @@ fuzzpipe_assert_target_exists() {
     echo "Missing build script for target '$target': $build_script"
     exit 1
   fi
-}
-
-fuzzpipe_list_supported_targets() {
-  echo "cjson cjson_old yaml sqlite"
 }
