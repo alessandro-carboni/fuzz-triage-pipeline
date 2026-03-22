@@ -3,7 +3,7 @@
 A reproducible multi-target fuzzing and crash triage pipeline built to simulate a realistic vulnerability discovery workflow.
 
 <p align="center">
-  <img src="docs/fuzz-triage-pipe.gif" alt="Fuzz pipeline demo" width="900"/>
+  <img src="docs/fuzz-triage-pipe.gif" alt="Fuzz Pipeline Run" width="900"/>
 </p>
 
 <p align="center">
